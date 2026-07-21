@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0">Prediction Dashboard</h2>
+        <small class="text-muted">Upload data, train models, and predict student outcomes.</small>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card">
+            <h6>Excellent</h6>
+            <h3>{{ prediction_counts["Excellent"] }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card">
+            <h6>Average</h6>
+            <h3>{{ prediction_counts["Average"] }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card risk">
+            <h6>At-Risk</h6>
+            <h3>{{ prediction_counts["At-Risk"] }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">1) Upload Training Dataset</div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('main.upload_training') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" name="training_file" accept=".csv" required>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Upload Training CSV</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">2) Train Model</div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('main.train_model') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Select dataset</label>
+                        <select class="form-select" name="dataset_id" required>
+                            <option value="" disabled selected>Choose uploaded dataset</option>
+                            {% for data in datasets %}
+                                <option value="{{ data.id }}">{{ data.filename }} ({{ data.created_at.strftime("%Y-%m-%d %H:%M") }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-success w-100" type="submit">Train Models</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">3) Predict New Dataset</div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('main.predict') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" name="prediction_file" accept=".csv" required>
+                    </div>
+                    <button class="btn btn-warning w-100" type="submit">Generate Predictions</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Model Performance</span>
+                {% if latest_model %}
+                    <span class="badge bg-primary">{{ latest_model.selected_model }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if latest_model %}
+                    <div class="row text-center">
+                        <div class="col-md-3"><p class="mb-1 text-muted">Accuracy</p><h5>{{ "%.2f"|format(latest_model.accuracy * 100) }}%</h5></div>
+                        <div class="col-md-3"><p class="mb-1 text-muted">Precision</p><h5>{{ "%.2f"|format(latest_model.precision * 100) }}%</h5></div>
+                        <div class="col-md-3"><p class="mb-1 text-muted">Recall</p><h5>{{ "%.2f"|format(latest_model.recall * 100) }}%</h5></div>
+                        <div class="col-md-3"><p class="mb-1 text-muted">F1-Score</p><h5>{{ "%.2f"|format(latest_model.f1_score * 100) }}%</h5></div>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No model trained yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Prediction Distribution</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6"><canvas id="barChart"></canvas></div>
+                    <div class="col-md-6"><canvas id="pieChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Latest Prediction Table</span>
+                {% if latest_batch_id %}
+                    <div>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.export_csv', batch_id=latest_batch_id) }}">Export CSV</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.export_pdf', batch_id=latest_batch_id) }}">Export PDF</a>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Predicted Category</th>
+                        <th>Generated At</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in latest_predictions %}
+                        <tr class="{{ 'table-danger' if row.predicted_label == 'At-Risk' else '' }}">
+                            <td>{{ row.student_id }}</td>
+                            <td>{{ row.predicted_label }}</td>
+                            <td>{{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="text-center text-muted">No predictions available yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = ["Excellent", "Average", "At-Risk"];
+    const values = [
+        {{ prediction_counts["Excellent"] }},
+        {{ prediction_counts["Average"] }},
+        {{ prediction_counts["At-Risk"] }}
+    ];
+
+    new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Students",
+                data: values,
+                backgroundColor: ["#198754", "#0d6efd", "#dc3545"]
+            }]
+        },
+        options: {responsive: true}
+    });
+
+    new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: ["#198754", "#0d6efd", "#dc3545"]
+            }]
+        },
+        options: {responsive: true}
+    });
+</script>
+{% endblock %}
