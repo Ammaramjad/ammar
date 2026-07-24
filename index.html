@@ -1,198 +1,212 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant-TW">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>禾曜法律事務所｜法律知識專欄｜以白話法律，守護每一項權益</title>
-    <meta
-      name="description"
-      content="禾曜法律事務所提供民事、刑事、家事、勞資、契約、車禍、繼承等法律服務，並以白話法律知識協助民眾理解法律、保障自身權益。"
-    />
+    <title>220電腦維修</title>
+    <meta name="description" content="220電腦維修網站首頁 clone。" />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <div class="page-overlay" id="overlay"></div>
     <header class="site-header">
-      <div class="container nav">
-        <a class="logo" href="#">
-          <span class="logo-badge">⚖</span>
-          <span>
-            <strong>禾曜法律事務所</strong>
-            <small>法律知識專欄</small>
-          </span>
-        </a>
-        <nav class="menu">
-          <a href="#">首頁</a>
-          <a href="#">關於我們</a>
-          <a href="#">服務領域</a>
-          <a href="#">法律知識</a>
-          <a href="#">常見問題</a>
-          <a href="#">聯絡我們</a>
-        </nav>
-        <a class="btn btn-solid nav-cta" href="#">立即諮詢</a>
+      <div class="topbar">
+        <div class="container topbar-inner">
+          <div class="lang">Language</div>
+        </div>
       </div>
+      <div class="header-main container">
+        <a class="brand" href="#">
+          <img
+            src="https://uploads.posu.tw/14/1463/202305101139348874.png"
+            alt="220電腦維修"
+          />
+        </a>
+        <button class="menu-btn" id="menuBtn" aria-label="選單">☰</button>
+      </div>
+      <nav class="menu-wrap">
+        <ul class="container menu-list">
+          <li><a href="#home"><span>首頁</span><small>Index</small></a></li>
+          <li><a href="#about"><span>關於220</span><small>關於220</small></a></li>
+          <li><a href="#news"><span>最新消息</span><small>最新消息</small></a></li>
+          <li><a href="#works"><span>實績案例</span><small>實績案例</small></a></li>
+          <li><a href="#products"><span>開店與系統</span><small>Products</small></a></li>
+          <li><a href="#links"><span>相關連結</span><small>Link</small></a></li>
+          <li><a href="#contact"><span>聯絡我們</span><small>Contact</small></a></li>
+        </ul>
+      </nav>
     </header>
 
-    <main>
+    <aside class="mobile-panel" id="mobilePanel">
+      <button class="close-btn" id="closeBtn" aria-label="關閉">✕</button>
+      <ul>
+        <li><a href="#home">首頁 / Index</a></li>
+        <li><a href="#about">關於220</a></li>
+        <li><a href="#news">最新消息</a></li>
+        <li><a href="#works">實績案例</a></li>
+        <li><a href="#products">開店與系統</a></li>
+        <li><a href="#links">相關連結</a></li>
+        <li><a href="#contact">聯絡我們</a></li>
+      </ul>
+    </aside>
+
+    <main id="home">
       <section class="hero">
-        <div class="container hero-grid">
+        <div class="slides">
+          <img src="https://uploads.posu.tw/14/1463/b202305101130130.gif" alt="banner 1" />
+          <img src="https://uploads.posu.tw/14/1463/b202305101131540.gif" alt="banner 2" />
+        </div>
+      </section>
+
+      <section class="section container" id="about">
+        <div class="heading center">
+          <h1>關於220</h1>
+          <p>關於220</p>
+        </div>
+        <article class="card about-card">
+          <img src="https://uploads.posu.tw/14/1463/s202305101117390.gif" alt="關於我" />
           <div>
-            <p class="pill">主持律師｜莊佳蓉律師</p>
-            <h1>專業法律服務，<br /><span>守護您的每一項權益。</span></h1>
-            <p class="lead">
-              禾曜法律事務所由主持律師莊佳蓉律師帶領，提供民事、刑事、家事、勞資、企業法律顧問等專業法律服務，並透過法律知識專欄，以白話方式解析法律議題，協助每位民眾理解法律、保障自身權益。
+            <h2>關於我</h2>
+            <p>
+              【220專業電腦維修】多年經驗、誠實價格、免檢測費、快速維修。<br />
+              聯絡資訊：LINE @fbc6543u / 電話 0982082629。<br />
+              營業時間：週一至週日 10:00-21:00。
             </p>
-            <div class="hero-actions">
-              <a class="btn btn-solid" href="#">立即諮詢</a>
-              <a class="btn btn-outline" href="#">閱讀法律知識</a>
-            </div>
-            <div class="stats">
-              <div><strong>10+</strong><small>服務領域</small></div>
-              <div><strong>150+</strong><small>法律文章</small></div>
-              <div><strong>9</strong><small>法律分類</small></div>
-            </div>
+            <a class="btn" href="#">更多</a>
           </div>
-          <div class="hero-card">
-            <h2>法律知識導覽</h2>
-            <p>以白話方式整理常見法律議題，快速找到可執行的下一步。</p>
-            <ul>
-              <li>民法、刑法、家事、勞資、車禍、繼承</li>
-              <li>最新修法與實務重點</li>
-              <li>諮詢前必看 FAQ 與流程</li>
-            </ul>
-          </div>
-        </div>
+        </article>
       </section>
 
-      <section class="section container">
-        <div class="section-head">
-          <h2>最多人搜尋的法律問題</h2>
-        </div>
-        <div class="grid grid-3">
-          <a class="card link-card" href="#">被資遣可以拿多少錢？</a>
-          <a class="card link-card" href="#">車禍和解書怎麼簽？</a>
-          <a class="card link-card" href="#">自書遺囑怎麼寫才有效？</a>
-          <a class="card link-card" href="#">違約金可以要多少？</a>
-          <a class="card link-card" href="#">離婚監護權怎麼判？</a>
-          <a class="card link-card" href="#">網購七天鑑賞期怎麼算？</a>
-        </div>
-      </section>
-
-      <section class="section section-alt">
+      <section class="section section-muted" id="news">
         <div class="container">
-          <div class="section-head">
-            <h2>依法律分類，快速找到您需要的答案</h2>
-            <p>白話拆解每一個法律領域，用日常語言告訴您權益所在。</p>
+          <div class="heading center">
+            <h2>最新消息</h2>
+            <p>最新消息</p>
           </div>
-          <div class="grid grid-3">
-            <article class="card category"><h3>民法</h3><p>契約、債權、物權與侵權責任的核心規範。</p></article>
-            <article class="card category"><h3>刑法</h3><p>犯罪構成要件、刑責與辯護要點。</p></article>
-            <article class="card category"><h3>家事</h3><p>婚姻、親權、扶養與繼承議題。</p></article>
-            <article class="card category"><h3>勞資</h3><p>勞動契約、加班費、資遣與職災。</p></article>
-            <article class="card category"><h3>車禍</h3><p>肇責認定、和解與賠償實務。</p></article>
-            <article class="card category"><h3>繼承</h3><p>遺囑、拋棄繼承與遺產分割。</p></article>
-            <article class="card category"><h3>消費者保護</h3><p>定型化契約、網購退貨、消費爭議。</p></article>
-            <article class="card category"><h3>契約</h3><p>契約審閱、條款陷阱與履約救濟。</p></article>
-            <article class="card category"><h3>法律新知</h3><p>最新修法動向與實務見解。</p></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section container">
-        <div class="section-head">
-          <h2>最新法律知識專欄</h2>
-        </div>
-        <div class="grid grid-3">
-          <article class="card article"><h3>什麼是違約？契約沒履行可以求償多少？</h3><p>解析違約成立要件、損害賠償計算方式與常見爭議。</p></article>
-          <article class="card article"><h3>被資遣可以拿多少錢？資遣費完整計算指南</h3><p>資遣預告期、資遣費計算與非自願離職申請流程。</p></article>
-          <article class="card article"><h3>車禍和解書怎麼簽才不會吃虧？</h3><p>和解金額、免除刑責與保留後續費用條款重點。</p></article>
-        </div>
-      </section>
-
-      <section class="section section-alt">
-        <div class="container">
-          <div class="section-head">
-            <h2>十大專業服務領域</h2>
-            <p>從個人紛爭到企業顧問，我們陪您走過每一段法律歷程。</p>
-          </div>
-          <div class="grid grid-5">
-            <article class="card tiny"><h3>民事案件</h3><p>契約糾紛、債權債務與損害賠償。</p></article>
-            <article class="card tiny"><h3>刑事案件</h3><p>偵查、審判與上訴全程辯護。</p></article>
-            <article class="card tiny"><h3>家事事件</h3><p>離婚、監護、扶養與家暴處理。</p></article>
-            <article class="card tiny"><h3>勞資爭議</h3><p>資遣、加班費、職災權益救濟。</p></article>
-            <article class="card tiny"><h3>契約審閱</h3><p>商業契約與合作協議把關。</p></article>
-            <article class="card tiny"><h3>企業法律顧問</h3><p>長期陪伴企業的法律守門人。</p></article>
-            <article class="card tiny"><h3>車禍事故</h3><p>事故責任、和解與賠償處理。</p></article>
-            <article class="card tiny"><h3>遺產繼承</h3><p>遺囑、繼承與遺產分割規劃。</p></article>
-            <article class="card tiny"><h3>行政案件</h3><p>訴願、行政訴訟與救濟策略。</p></article>
-            <article class="card tiny"><h3>不動產</h3><p>買賣、租賃與產權糾紛。</p></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section container">
-        <div class="section-head">
-          <h2>關於委任，您可能想知道的事</h2>
-        </div>
-        <div class="faq">
-          <details class="faq-item"><summary>初次諮詢需要收費嗎？</summary><p>初步案件評估通常免費，正式委任將依案件範圍報價。</p></details>
-          <details class="faq-item"><summary>如何預約諮詢？</summary><p>可透過電話、Email 或網站表單，安排到所或線上諮詢。</p></details>
-          <details class="faq-item"><summary>案件處理需要多久？</summary><p>依案件複雜度與程序而定，受理後會提供預估節點。</p></details>
-          <details class="faq-item"><summary>律師費如何計算？</summary><p>採固定費或階段式收費，皆於委任前完整揭露。</p></details>
-        </div>
-      </section>
-
-      <section class="section cta-wrap">
-        <div class="container">
-          <div class="cta">
-            <h2>有法律問題？先從一次專業諮詢開始。</h2>
-            <p>把您的問題交給專業律師，我們會協助您釐清權益、規劃可行方案。</p>
-            <div class="hero-actions">
-              <a class="btn btn-light" href="#">立即諮詢</a>
-              <a class="btn btn-ghost" href="#">先看看法律專欄</a>
+          <article class="card news-card">
+            <div class="date-block">
+              <span>2020</span>
+              <span>01</span>
+              <span>09</span>
             </div>
+            <img src="https://uploads.posu.tw/14/1463/s202001101048490.gif" alt="超值購物開店" />
+            <div>
+              <h3>超值購物開店</h3>
+              <p>便宜網路開店優惠方案 #網路開店 #網站架設 #線上商店。</p>
+            </div>
+          </article>
+          <div class="more-wrap"><a class="btn ghost" href="#">更多最新消息</a></div>
+        </div>
+      </section>
+
+      <section class="section container" id="works">
+        <div class="heading">
+          <h2>實績案例</h2>
+          <p>實績案例</p>
+        </div>
+        <div class="grid three">
+          <article class="card">
+            <img src="https://uploads.posu.tw/14/1463/s202305101414030.gif" alt="電腦溫度偏高" />
+            <h3>電腦溫度偏高</h3>
+          </article>
+          <article class="card">
+            <img src="https://uploads.posu.tw/14/1463/s202305101411410.gif" alt="電腦常常當機速度又超慢" />
+            <h3>電腦常常當機速度又超慢</h3>
+          </article>
+          <article class="card">
+            <img src="https://uploads.posu.tw/14/1463/s202305101348070.gif" alt="電腦有跑不動當機等狀況" />
+            <h3>電腦有跑不動當機等狀況</h3>
+          </article>
+        </div>
+      </section>
+
+      <section class="section section-muted" id="links">
+        <div class="container">
+          <div class="heading">
+            <h2>相關連結</h2>
+            <p>Link</p>
           </div>
+          <div class="grid links">
+            <article class="card">
+              <img src="https://uploads.posu.tw/14/1463/s202305101406420.gif" alt="220電腦3c維修" />
+              <h3>220電腦3c維修</h3>
+            </article>
+            <article class="card">
+              <img src="https://uploads.posu.tw/14/1463/s202305101418400.gif" alt="FB" />
+              <h3>FB</h3>
+            </article>
+            <article class="card">
+              <img src="https://uploads.posu.tw/14/1463/s202111021658450.gif" alt="台灣優質電腦維修聯盟" />
+              <h3>台灣優質電腦維修聯盟</h3>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section container" id="products">
+        <div class="heading">
+          <h2>開店與系統</h2>
+          <p>Products</p>
+        </div>
+        <div class="grid four">
+          <article class="card">
+            <img src="https://uploads.posu.tw/1/1/s202205191518280.gif" alt="雲端商務名片" />
+            <h3>雲端商務名片</h3>
+          </article>
+          <article class="card">
+            <img src="https://uploads.posu.tw/1/1/s202201051632430.gif" alt="狂殺開店方案" />
+            <h3>狂殺開店方案</h3>
+          </article>
+          <article class="card">
+            <img src="https://uploads.posu.tw/1/1/s202201051727340.gif" alt="精美RWD形象官網" />
+            <h3>精美RWD形象官網</h3>
+          </article>
+          <article class="card">
+            <img src="https://uploads.posu.tw/1/1/s202402170836030.gif" alt="報名系統+精美網站" />
+            <h3>報名系統+精美網站</h3>
+          </article>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="container foot-grid">
-        <div>
-          <h3>禾曜法律事務所</h3>
-          <p>以白話法律，守護每一項權益。專業、細緻、值得信賴的法律夥伴。</p>
-        </div>
-        <div>
-          <h4>服務領域</h4>
-          <ul>
-            <li>民事案件</li>
-            <li>刑事案件</li>
-            <li>家事事件</li>
-            <li>勞資爭議</li>
-          </ul>
-        </div>
-        <div>
-          <h4>法律知識</h4>
-          <ul>
-            <li>民法</li>
-            <li>刑法</li>
-            <li>家事</li>
-            <li>繼承</li>
-          </ul>
-        </div>
-        <div>
-          <h4>聯絡我們</h4>
-          <ul>
-            <li>02-0000-0000</li>
-            <li>contact@heyao-law.tw</li>
-            <li>台北市信義區松高路 000 號 00 樓</li>
-          </ul>
-        </div>
+    <footer class="site-footer" id="contact">
+      <div class="container">
+        <ul class="contact-list">
+          <li>電話：<a href="tel:0982082629">0982082629</a></li>
+          <li>信箱：<a href="mailto:s24378277@gmail.com">s24378277@gmail.com</a></li>
+          <li>地址：406台中市北屯區軍功里東山路一段220巷22號</li>
+        </ul>
+        <p class="copyright">© <span id="year"></span> 220電腦維修 All rights reserved.</p>
       </div>
-      <p class="copyright">© 2026 禾曜法律事務所. All rights reserved.</p>
     </footer>
+
+    <script>
+      const body = document.body;
+      const menuBtn = document.getElementById("menuBtn");
+      const closeBtn = document.getElementById("closeBtn");
+      const panel = document.getElementById("mobilePanel");
+      const overlay = document.getElementById("overlay");
+      const year = document.getElementById("year");
+
+      function closeMenu() {
+        panel.classList.remove("open");
+        overlay.classList.remove("show");
+        body.classList.remove("lock");
+      }
+
+      menuBtn.addEventListener("click", () => {
+        panel.classList.add("open");
+        overlay.classList.add("show");
+        body.classList.add("lock");
+      });
+      closeBtn.addEventListener("click", closeMenu);
+      overlay.addEventListener("click", closeMenu);
+      panel.querySelectorAll("a").forEach((item) => item.addEventListener("click", closeMenu));
+      year.textContent = new Date().getFullYear();
+    </script>
   </body>
 </html>
