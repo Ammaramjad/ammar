@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ module_name }} | 社團系統{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <h1>{{ module_name }}</h1>
+  <a class="button-link" href="{{ url_for('content_new', module=module) }}">新增內容</a>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>標題</th>
+      <th>摘要</th>
+      <th>外部連結</th>
+      <th>狀態</th>
+      <th>更新時間</th>
+      <th>操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item["title"] }}</td>
+      <td>{{ item["summary"] or "-" }}</td>
+      <td>{{ item["external_url"] or "-" }}</td>
+      <td>{{ "開放" if item["published"] else "關閉" }}</td>
+      <td>{{ item["updated_at"] }}</td>
+      <td class="actions">
+        <a href="{{ url_for('content_edit', module=module, item_id=item['id']) }}">編輯</a>
+        <form method="post" action="{{ url_for('content_delete', module=module, item_id=item['id']) }}" onsubmit="return confirm('確定刪除這筆資料？')">
+          <button class="link-button" type="submit">刪除</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="6" class="empty">目前沒有資料</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

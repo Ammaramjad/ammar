@@ -14,8 +14,14 @@
         <nav>
           <a href="{{ url_for('dashboard') }}">儀表板</a>
           <a href="{{ url_for('members') }}">會員資料</a>
+          <a href="{{ url_for('content_list', module='news') }}">最新消息</a>
+          <a href="{{ url_for('content_list', module='announcements') }}">會員公告</a>
+          <a href="{{ url_for('content_list', module='activities') }}">活動管理</a>
+          <a href="{{ url_for('content_list', module='recruit') }}">人才招募</a>
+          <a href="{{ url_for('content_list', module='links') }}">相關連結</a>
           <a href="{{ url_for('profile') }}">個人帳號</a>
           <a href="{{ url_for('settings', tab='frontend') }}">系統設定</a>
+          <a href="{{ url_for('front_site', site_code='2236') }}">前台預覽</a>
         </nav>
         <div class="sidebar-footer">
           <div>{{ g.user["display_name"] }}</div>

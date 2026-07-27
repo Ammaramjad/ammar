@@ -135,6 +135,10 @@ button,
   font-weight: 600;
 }
 
+.module-card-link {
+  text-decoration: none;
+}
+
 .module-icon {
   font-size: 20px;
 }
@@ -321,4 +325,76 @@ button,
   gap: 6px;
   margin-right: 20px;
   font-weight: 500;
+}
+
+.front-body {
+  margin: 0;
+  background: #f7faff;
+  color: #20334b;
+}
+
+.front-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid #d9e5f4;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.front-header h1 {
+  margin: 0 0 6px;
+  font-size: 30px;
+}
+
+.front-header p {
+  margin: 0;
+  color: #4f6482;
+}
+
+.front-main {
+  max-width: 1120px;
+  margin: 18px auto;
+  padding: 0 20px 28px;
+}
+
+.front-section {
+  background: #fff;
+  border: 1px solid #dbe2ef;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  padding: 14px;
+}
+
+.front-section h2 {
+  margin: 0 0 12px;
+}
+
+.front-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.front-card {
+  border: 1px solid #dbe2ef;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafcff;
+}
+
+.front-card h3 {
+  margin: 0 0 8px;
+}
+
+.front-card p {
+  margin: 0 0 8px;
+  color: #415a77;
+}
+
+.front-body-text {
+  font-size: 14px;
+  color: #23344c;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
 }

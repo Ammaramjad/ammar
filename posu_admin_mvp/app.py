@@ -16,6 +16,13 @@ SETTINGS_TABS: list[tuple[str, str]] = [
     ("activity", "活動"),
     ("plugin", "外掛"),
 ]
+CONTENT_MODULES: dict[str, str] = {
+    "news": "最新消息",
+    "announcements": "會員公告",
+    "activities": "活動管理",
+    "recruit": "人才招募",
+    "links": "相關連結",
+}
 
 
 def create_app(test_config: dict[str, Any] | None = None) -> Flask:
@@ -74,24 +81,24 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
         if guard:
             return guard
         modules = [
-            "活動管理",
-            "活動花絮",
-            "關於本會",
-            "最新消息",
-            "會員公告",
-            "專欄園地",
-            "會員商品",
-            "理事長(幹部)",
-            "會員資訊",
-            "留言板",
-            "人才招募",
-            "相關連結",
-            "本會記事",
-            "夥伴介紹",
-            "社團新聞",
-            "主題新知",
-            "紅白帖",
-            "日記簿",
+            {"name": "活動管理", "url": url_for("content_list", module="activities")},
+            {"name": "活動花絮", "url": "#"},
+            {"name": "關於本會", "url": "#"},
+            {"name": "最新消息", "url": url_for("content_list", module="news")},
+            {"name": "會員公告", "url": url_for("content_list", module="announcements")},
+            {"name": "專欄園地", "url": "#"},
+            {"name": "會員商品", "url": "#"},
+            {"name": "理事長(幹部)", "url": "#"},
+            {"name": "會員資訊", "url": url_for("members")},
+            {"name": "留言板", "url": "#"},
+            {"name": "人才招募", "url": url_for("content_list", module="recruit")},
+            {"name": "相關連結", "url": url_for("content_list", module="links")},
+            {"name": "本會記事", "url": "#"},
+            {"name": "夥伴介紹", "url": "#"},
+            {"name": "社團新聞", "url": "#"},
+            {"name": "主題新知", "url": "#"},
+            {"name": "紅白帖", "url": "#"},
+            {"name": "日記簿", "url": "#"},
         ]
         return render_template("dashboard.html", modules=modules)
 
@@ -146,7 +153,8 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
         sections = get_profile_sections()
         all_fields = flatten_sections(sections)
         if request.method == "POST":
-            save_settings_values(all_fields)
+            persistable_fields = [field for field in all_fields if field.get("type") != "password"]
+            save_settings_values(persistable_fields)
             if request.form.get("password"):
                 db = get_db()
                 db.execute(
@@ -161,6 +169,127 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
             "profile.html",
             sections=sections,
             values=values,
+        )
+
+    @app.route("/content/<module>")
+    def content_list(module: str) -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        module_name = CONTENT_MODULES.get(module)
+        if not module_name:
+            flash("找不到內容模組", "error")
+            return redirect(url_for("dashboard"))
+        db = get_db()
+        items = db.execute(
+            """
+            SELECT id, title, summary, external_url, published, updated_at
+            FROM content_items
+            WHERE module = ?
+            ORDER BY id DESC
+            """,
+            (module,),
+        ).fetchall()
+        return render_template(
+            "content_list.html",
+            module=module,
+            module_name=module_name,
+            items=items,
+            modules=CONTENT_MODULES,
+        )
+
+    @app.route("/content/<module>/new", methods=["GET", "POST"])
+    def content_new(module: str) -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        module_name = CONTENT_MODULES.get(module)
+        if not module_name:
+            flash("找不到內容模組", "error")
+            return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            save_content_item(module)
+            flash(f"{module_name}已新增", "success")
+            return redirect(url_for("content_list", module=module))
+        return render_template(
+            "content_form.html",
+            module=module,
+            module_name=module_name,
+            form_action=f"新增{module_name}",
+            item=None,
+        )
+
+    @app.route("/content/<module>/<int:item_id>/edit", methods=["GET", "POST"])
+    def content_edit(module: str, item_id: int) -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        module_name = CONTENT_MODULES.get(module)
+        if not module_name:
+            flash("找不到內容模組", "error")
+            return redirect(url_for("dashboard"))
+        db = get_db()
+        item = db.execute(
+            "SELECT * FROM content_items WHERE module = ? AND id = ?",
+            (module, item_id),
+        ).fetchone()
+        if not item:
+            flash("找不到資料", "error")
+            return redirect(url_for("content_list", module=module))
+        if request.method == "POST":
+            save_content_item(module, item_id)
+            flash(f"{module_name}已更新", "success")
+            return redirect(url_for("content_list", module=module))
+        return render_template(
+            "content_form.html",
+            module=module,
+            module_name=module_name,
+            form_action=f"編輯{module_name}",
+            item=item,
+        )
+
+    @app.post("/content/<module>/<int:item_id>/delete")
+    def content_delete(module: str, item_id: int) -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        module_name = CONTENT_MODULES.get(module)
+        if not module_name:
+            flash("找不到內容模組", "error")
+            return redirect(url_for("dashboard"))
+        db = get_db()
+        db.execute("DELETE FROM content_items WHERE module = ? AND id = ?", (module, item_id))
+        db.commit()
+        flash(f"{module_name}已刪除", "info")
+        return redirect(url_for("content_list", module=module))
+
+    @app.route("/front")
+    def front_home() -> Any:
+        return redirect(url_for("front_site", site_code="2236"))
+
+    @app.route("/front/<site_code>")
+    def front_site(site_code: str) -> Any:
+        db = get_db()
+        rows = db.execute(
+            """
+            SELECT module, title, summary, body, external_url, updated_at
+            FROM content_items
+            WHERE published = 1
+            ORDER BY updated_at DESC, id DESC
+            """
+        ).fetchall()
+        sections: dict[str, list[Any]] = {key: [] for key in CONTENT_MODULES}
+        for row in rows:
+            sections[row["module"]].append(row)
+        title = load_settings_values(
+            [{"name": "fellowship_name", "default": "Yongkang International Fellowship"}]
+        )["fellowship_name"]
+        return render_template(
+            "front_home.html",
+            site_code=site_code,
+            title=title,
+            sections=sections,
+            modules=CONTENT_MODULES,
         )
 
     @app.route("/members/new", methods=["GET", "POST"])
@@ -253,6 +382,18 @@ def init_db(app: Flask) -> None:
                 setting_key TEXT PRIMARY KEY,
                 setting_value TEXT NOT NULL DEFAULT ''
             );
+
+            CREATE TABLE IF NOT EXISTS content_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                module TEXT NOT NULL,
+                title TEXT NOT NULL,
+                summary TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                external_url TEXT NOT NULL DEFAULT '',
+                published INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
         seed_default_admin(db)
@@ -316,6 +457,37 @@ def save_member(member_id: int | None = None) -> None:
     db.commit()
 
 
+def save_content_item(module: str, item_id: int | None = None) -> None:
+    db = get_db()
+    form = request.form
+    data = (
+        module,
+        form["title"].strip(),
+        form.get("summary", "").strip(),
+        form.get("body", "").strip(),
+        form.get("external_url", "").strip(),
+        1 if form.get("published") == "on" else 0,
+    )
+    if item_id is None:
+        db.execute(
+            """
+            INSERT INTO content_items (module, title, summary, body, external_url, published)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            data,
+        )
+    else:
+        db.execute(
+            """
+            UPDATE content_items
+            SET title = ?, summary = ?, body = ?, external_url = ?, published = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE module = ? AND id = ?
+            """,
+            (data[1], data[2], data[3], data[4], data[5], module, item_id),
+        )
+    db.commit()
+
+
 def flatten_sections(sections: list[dict[str, Any]]) -> list[dict[str, str]]:
     fields: list[dict[str, str]] = []
     for section in sections:
@@ -365,6 +537,7 @@ def seed_default_settings(db: sqlite3.Connection) -> None:
         "category_name": "總公司公告",
         "notify_email_enabled": "1",
         "notify_line_enabled": "1",
+        "fellowship_name": "Yongkang International Fellowship",
     }
     for key, value in defaults.items():
         db.execute(

@@ -6,10 +6,12 @@
 </header>
 <section class="module-grid">
   {% for module in modules %}
-    <article class="module-card">
-      <div class="module-icon">◉</div>
-      <div>{{ module }}</div>
-    </article>
+    <a class="module-card-link" href="{{ module['url'] }}">
+      <article class="module-card">
+        <div class="module-icon">◉</div>
+        <div>{{ module['name'] }}</div>
+      </article>
+    </a>
   {% endfor %}
 </section>
 {% endblock %}

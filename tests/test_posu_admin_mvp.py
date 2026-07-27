@@ -170,3 +170,49 @@ def test_profile_page_persistence_and_password_update(client):
         follow_redirects=True,
     )
     assert "歡迎使用系統" in new_password_login.get_data(as_text=True)
+
+
+def test_content_module_crud_and_front_visibility(client):
+    login(client)
+
+    create_news = client.post(
+        "/content/news/new",
+        data={
+            "title": "國際扶輪交流會",
+            "summary": "八月活動預告",
+            "body": "歡迎所有會員參加，地點在永康會館。",
+            "external_url": "https://example.org/news/1",
+            "published": "on",
+        },
+        follow_redirects=True,
+    )
+    create_body = create_news.get_data(as_text=True)
+    assert create_news.status_code == 200
+    assert "最新消息已新增" in create_body
+    assert "國際扶輪交流會" in create_body
+
+    update_news = client.post(
+        "/content/news/1/edit",
+        data={
+            "title": "國際扶輪交流會-更新",
+            "summary": "九月活動預告",
+            "body": "時間已更新，請留意公告。",
+            "external_url": "https://example.org/news/updated",
+            "published": "on",
+        },
+        follow_redirects=True,
+    )
+    update_body = update_news.get_data(as_text=True)
+    assert "最新消息已更新" in update_body
+    assert "國際扶輪交流會-更新" in update_body
+
+    front_page = client.get("/front/2236")
+    front_body = front_page.get_data(as_text=True)
+    assert front_page.status_code == 200
+    assert "Yongkang International Fellowship" in front_body
+    assert "國際扶輪交流會-更新" in front_body
+
+    delete_news = client.post("/content/news/1/delete", follow_redirects=True)
+    delete_body = delete_news.get_data(as_text=True)
+    assert "最新消息已刪除" in delete_body
+    assert "國際扶輪交流會-更新" not in delete_body
