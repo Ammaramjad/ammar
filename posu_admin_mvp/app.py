@@ -9,6 +9,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "posu_admin.db"
+SETTINGS_TABS: list[tuple[str, str]] = [
+    ("frontend", "前台設定"),
+    ("general", "通用"),
+    ("notice", "通知"),
+    ("activity", "活動"),
+    ("plugin", "外掛"),
+]
 
 
 def create_app(test_config: dict[str, Any] | None = None) -> Flask:
@@ -103,6 +110,56 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
         ).fetchall()
         return render_template("members.html", members=items)
 
+    @app.route("/settings")
+    def settings_index() -> Any:
+        return redirect(url_for("settings", tab="frontend"))
+
+    @app.route("/settings/<tab>", methods=["GET", "POST"])
+    def settings(tab: str) -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        tab_keys = [k for k, _ in SETTINGS_TABS]
+        if tab not in tab_keys:
+            flash("找不到設定頁面", "error")
+            return redirect(url_for("settings", tab="frontend"))
+        fields = get_settings_fields(tab)
+        db = get_db()
+        if request.method == "POST":
+            for field in fields:
+                value = request.form.get(field["name"], "")
+                if field.get("type") == "checkbox":
+                    value = "1" if request.form.get(field["name"]) == "on" else "0"
+                db.execute(
+                    """
+                    INSERT INTO settings (setting_key, setting_value)
+                    VALUES (?, ?)
+                    ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value
+                    """,
+                    (field["name"], value.strip() if isinstance(value, str) else value),
+                )
+            db.commit()
+            flash("設定已更新", "success")
+            return redirect(url_for("settings", tab=tab))
+
+        values = {}
+        for field in fields:
+            row = db.execute(
+                "SELECT setting_value FROM settings WHERE setting_key = ?",
+                (field["name"],),
+            ).fetchone()
+            if row:
+                values[field["name"]] = row["setting_value"]
+            else:
+                values[field["name"]] = field.get("default", "")
+        return render_template(
+            "settings.html",
+            tabs=SETTINGS_TABS,
+            active_tab=tab,
+            fields=fields,
+            values=values,
+        )
+
     @app.route("/members/new", methods=["GET", "POST"])
     def members_new() -> Any:
         guard = require_login()
@@ -188,9 +245,15 @@ def init_db(app: Flask) -> None:
                 level TEXT NOT NULL DEFAULT '一般會員',
                 active INTEGER NOT NULL DEFAULT 1
             );
+
+            CREATE TABLE IF NOT EXISTS settings (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT NOT NULL DEFAULT ''
+            );
             """
         )
         seed_default_admin(db)
+        seed_default_settings(db)
         db.commit()
 
 
@@ -248,6 +311,72 @@ def save_member(member_id: int | None = None) -> None:
             (*data, member_id),
         )
     db.commit()
+
+
+def seed_default_settings(db: sqlite3.Connection) -> None:
+    defaults = {
+        "privacy_policy": (
+            "本網站重視您的隱私權，將依個人資料保護法妥善處理個人資料。"
+            "若您對隱私政策有任何疑問，請聯繫管理員。"
+        ),
+        "site_name": "社團達人展示",
+        "category_name": "總公司公告",
+        "notify_email_enabled": "1",
+        "notify_line_enabled": "1",
+    }
+    for key, value in defaults.items():
+        db.execute(
+            """
+            INSERT INTO settings (setting_key, setting_value)
+            VALUES (?, ?)
+            ON CONFLICT(setting_key) DO NOTHING
+            """,
+            (key, value),
+        )
+
+
+def get_settings_fields(tab: str) -> list[dict[str, str]]:
+    if tab == "frontend":
+        return [
+            {"name": "site_public_notice", "label": "總公司的公告", "type": "radio"},
+            {"name": "site_name", "label": "公告開放後名稱", "type": "text", "default": "社團達人展示"},
+            {"name": "category_name", "label": "分類名稱", "type": "text", "default": "總公司公告"},
+            {"name": "join_message", "label": "加入會員說明", "type": "textarea"},
+            {"name": "privacy_policy", "label": "隱私權說明", "type": "textarea"},
+        ]
+    if tab == "general":
+        return [
+            {"name": "site_domain", "label": "網址網域", "type": "text"},
+            {"name": "site_title", "label": "網站標題", "type": "text"},
+            {"name": "line_official_id", "label": "Line 帳號", "type": "text"},
+            {"name": "contact_person", "label": "聯絡人", "type": "text"},
+            {"name": "contact_phone", "label": "聯絡電話", "type": "text"},
+            {"name": "contact_email", "label": "E-Mail", "type": "text"},
+        ]
+    if tab == "notice":
+        return [
+            {"name": "notify_email_enabled", "label": "寄信通知", "type": "checkbox"},
+            {"name": "notify_line_enabled", "label": "Line 通知", "type": "checkbox"},
+            {"name": "notify_member_enabled", "label": "會員通知", "type": "checkbox"},
+            {"name": "notify_digest_text", "label": "通知內容", "type": "textarea"},
+        ]
+    if tab == "activity":
+        return [
+            {"name": "activity_open", "label": "活動開放", "type": "radio"},
+            {"name": "activity_title", "label": "活動標題", "type": "text"},
+            {"name": "activity_desc", "label": "活動說明", "type": "textarea"},
+            {"name": "activity_rules", "label": "活動規範", "type": "textarea"},
+        ]
+    return [
+        {"name": "gemini_api_key", "label": "Gemini AI APIKEY", "type": "text"},
+        {"name": "google_verify", "label": "Google 驗證碼", "type": "text"},
+        {"name": "google_analytics", "label": "Google Analytics", "type": "text"},
+        {"name": "google_tag_manager", "label": "Google Tag Manager", "type": "text"},
+        {"name": "google_adsense", "label": "Google AdSense", "type": "text"},
+        {"name": "openai_api_key", "label": "OpenAI APIKEY", "type": "text"},
+        {"name": "bing_verify", "label": "Bing 驗證碼", "type": "text"},
+        {"name": "facebook_pixel", "label": "FB Pixel 代碼", "type": "text"},
+    ]
 
 
 app = create_app()

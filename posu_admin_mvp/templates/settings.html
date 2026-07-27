@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}系統設定 | 社團系統{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <h1>系統設定</h1>
+</div>
+
+<nav class="tab-nav">
+  {% for key, label in tabs %}
+    <a class="tab-item {% if key == active_tab %}active{% endif %}" href="{{ url_for('settings', tab=key) }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<section class="settings-card">
+  <form method="post" class="stack-form">
+    {% for field in fields %}
+      <div class="settings-row">
+        <label>{{ field["label"] }}：</label>
+        <div class="settings-input">
+          {% if field["type"] == "textarea" %}
+            <textarea name="{{ field['name'] }}" rows="8">{{ values[field['name']] }}</textarea>
+          {% elif field["type"] == "checkbox" %}
+            <label class="checkbox-label">
+              <input type="checkbox" name="{{ field['name'] }}" {% if values[field['name']] == "1" %}checked{% endif %}>
+              啟用
+            </label>
+          {% elif field["type"] == "radio" %}
+            <label class="inline-radio">
+              <input type="radio" name="{{ field['name'] }}" value="0" {% if values[field['name']] != "1" %}checked{% endif %}>
+              不開放
+            </label>
+            <label class="inline-radio">
+              <input type="radio" name="{{ field['name'] }}" value="1" {% if values[field['name']] == "1" %}checked{% endif %}>
+              開放
+            </label>
+          {% else %}
+            <input type="text" name="{{ field['name'] }}" value="{{ values[field['name']] }}">
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    <div class="form-footer">
+      <button type="submit">送出資料</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

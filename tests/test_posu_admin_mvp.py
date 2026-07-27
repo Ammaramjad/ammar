@@ -86,3 +86,43 @@ def test_member_crud_flow(client):
     delete_body = delete_response.get_data(as_text=True)
     assert "會員資料已刪除" in delete_body
     assert "王小明(更新)" not in delete_body
+
+
+def test_settings_tabs_and_persistence(client):
+    login(client)
+
+    post_general = client.post(
+        "/settings/general",
+        data={
+            "site_domain": "https://example.org",
+            "site_title": "社團達人測試站",
+            "line_official_id": "@testline",
+            "contact_person": "王管理員",
+            "contact_phone": "02-1234-5678",
+            "contact_email": "admin@example.org",
+        },
+        follow_redirects=True,
+    )
+    assert post_general.status_code == 200
+    page_general = post_general.get_data(as_text=True)
+    assert "設定已更新" in page_general
+    assert "社團達人測試站" in page_general
+
+    post_plugin = client.post(
+        "/settings/plugin",
+        data={
+            "gemini_api_key": "gemini-key-001",
+            "google_verify": "google-verify-abc",
+            "google_analytics": "GA-TEST-001",
+            "google_tag_manager": "GTM-AAAAAA",
+            "google_adsense": "ca-pub-123456",
+            "openai_api_key": "openai-key-xyz",
+            "bing_verify": "bing-verify-777",
+            "facebook_pixel": "fb-pixel-123",
+        },
+        follow_redirects=True,
+    )
+    assert post_plugin.status_code == 200
+    page_plugin = post_plugin.get_data(as_text=True)
+    assert "openai-key-xyz" in page_plugin
+    assert "fb-pixel-123" in page_plugin
