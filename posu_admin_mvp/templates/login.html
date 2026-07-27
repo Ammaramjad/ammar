@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登入 | 社團系統{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <h1>社團管理系統登入</h1>
+  <form method="post" class="stack-form">
+    <label>帳號
+      <input type="text" name="account" placeholder="請輸入帳號" required>
+    </label>
+    <label>密碼
+      <input type="password" name="password" placeholder="請輸入密碼" required>
+    </label>
+    <button type="submit">登入系統</button>
+  </form>
+  <p class="help">預設帳號：gp0975717557 / 0975717557</p>
+</section>
+{% endblock %}

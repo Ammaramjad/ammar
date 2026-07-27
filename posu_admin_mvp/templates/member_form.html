@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ form_action }} | 社團系統{% endblock %}
+{% block content %}
+<section class="form-card">
+  <h1>{{ form_action }}</h1>
+  <form method="post" class="stack-form">
+    <label>會員編號
+      <input type="text" name="member_no" value="{{ member['member_no'] if member else '' }}" required>
+    </label>
+    <label>姓名
+      <input type="text" name="name" value="{{ member['name'] if member else '' }}" required>
+    </label>
+    <label>電話
+      <input type="text" name="phone" value="{{ member['phone'] if member else '' }}" required>
+    </label>
+    <label>Email
+      <input type="email" name="email" value="{{ member['email'] if member else '' }}">
+    </label>
+    <label>會員等級
+      <input type="text" name="level" value="{{ member['level'] if member else '一般會員' }}" required>
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" name="active" {% if member and member['active'] %}checked{% elif not member %}checked{% endif %}>
+      啟用會員
+    </label>
+    <div class="form-footer">
+      <button type="submit">儲存</button>
+      <a class="button-link ghost" href="{{ url_for('members') }}">取消</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
