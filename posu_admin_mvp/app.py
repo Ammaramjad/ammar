@@ -63,7 +63,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/dashboard")
     def dashboard() -> Any:
-        require_login()
+        guard = require_login()
+        if guard:
+            return guard
         modules = [
             "活動管理",
             "活動花絮",
@@ -88,7 +90,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/members")
     def members() -> Any:
-        require_login()
+        guard = require_login()
+        if guard:
+            return guard
         db = get_db()
         items = db.execute(
             """
@@ -101,7 +105,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/members/new", methods=["GET", "POST"])
     def members_new() -> Any:
-        require_login()
+        guard = require_login()
+        if guard:
+            return guard
         if request.method == "POST":
             try:
                 save_member()
@@ -114,7 +120,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.route("/members/<int:member_id>/edit", methods=["GET", "POST"])
     def members_edit(member_id: int) -> Any:
-        require_login()
+        guard = require_login()
+        if guard:
+            return guard
         db = get_db()
         member = db.execute("SELECT * FROM members WHERE id = ?", (member_id,)).fetchone()
         if member is None:
@@ -132,7 +140,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
 
     @app.post("/members/<int:member_id>/delete")
     def members_delete(member_id: int) -> Any:
-        require_login()
+        guard = require_login()
+        if guard:
+            return guard
         db = get_db()
         db.execute("DELETE FROM members WHERE id = ?", (member_id,))
         db.commit()
@@ -202,9 +212,11 @@ def seed_default_admin(db: sqlite3.Connection) -> None:
         )
 
 
-def require_login() -> None:
+def require_login() -> Any:
     if g.user is None:
-        raise PermissionError
+        flash("請先登入系統", "error")
+        return redirect(url_for("login"))
+    return None
 
 
 def save_member(member_id: int | None = None) -> None:
@@ -239,12 +251,6 @@ def save_member(member_id: int | None = None) -> None:
 
 
 app = create_app()
-
-
-@app.errorhandler(PermissionError)
-def handle_permission_error(_: PermissionError) -> Any:
-    flash("請先登入系統", "error")
-    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
