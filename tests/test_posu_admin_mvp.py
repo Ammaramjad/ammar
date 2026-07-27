@@ -126,3 +126,47 @@ def test_settings_tabs_and_persistence(client):
     page_plugin = post_plugin.get_data(as_text=True)
     assert "openai-key-xyz" in page_plugin
     assert "fb-pixel-123" in page_plugin
+
+
+def test_profile_page_persistence_and_password_update(client):
+    login(client)
+
+    profile_response = client.post(
+        "/profile",
+        data={
+            "profile_display_enabled": "1",
+            "profile_company": "社團達人展示公司",
+            "profile_nickname": "b_demo_plus",
+            "profile_phone_1": "0911-222-333",
+            "profile_email_1": "profile@demo.tw",
+            "profile_line_id": "@lineprofile",
+            "profile_city": "台北市",
+            "profile_intro": "這是個人簡述測試內容",
+            "profile_ad_url": "https://ad.demo.tw",
+            "profile_account_image_1": "bank-shot-1.png",
+            "profile_note": "備註測試",
+            "password": "newpass1234",
+        },
+        follow_redirects=True,
+    )
+    assert profile_response.status_code == 200
+    profile_body = profile_response.get_data(as_text=True)
+    assert "個人帳號資料已更新" in profile_body
+    assert "社團達人展示公司" in profile_body
+    assert "https://ad.demo.tw" in profile_body
+
+    client.get("/logout", follow_redirects=True)
+
+    old_password_login = client.post(
+        "/login",
+        data={"account": "gp0975717557", "password": "0975717557"},
+        follow_redirects=True,
+    )
+    assert "帳號或密碼錯誤" in old_password_login.get_data(as_text=True)
+
+    new_password_login = client.post(
+        "/login",
+        data={"account": "gp0975717557", "password": "newpass1234"},
+        follow_redirects=True,
+    )
+    assert "歡迎使用系統" in new_password_login.get_data(as_text=True)

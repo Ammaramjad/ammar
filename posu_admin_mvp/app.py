@@ -126,37 +126,40 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
         fields = get_settings_fields(tab)
         db = get_db()
         if request.method == "POST":
-            for field in fields:
-                value = request.form.get(field["name"], "")
-                if field.get("type") == "checkbox":
-                    value = "1" if request.form.get(field["name"]) == "on" else "0"
-                db.execute(
-                    """
-                    INSERT INTO settings (setting_key, setting_value)
-                    VALUES (?, ?)
-                    ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value
-                    """,
-                    (field["name"], value.strip() if isinstance(value, str) else value),
-                )
-            db.commit()
+            save_settings_values(fields)
             flash("設定已更新", "success")
             return redirect(url_for("settings", tab=tab))
-
-        values = {}
-        for field in fields:
-            row = db.execute(
-                "SELECT setting_value FROM settings WHERE setting_key = ?",
-                (field["name"],),
-            ).fetchone()
-            if row:
-                values[field["name"]] = row["setting_value"]
-            else:
-                values[field["name"]] = field.get("default", "")
+        values = load_settings_values(fields)
         return render_template(
             "settings.html",
             tabs=SETTINGS_TABS,
             active_tab=tab,
             fields=fields,
+            values=values,
+        )
+
+    @app.route("/profile", methods=["GET", "POST"])
+    def profile() -> Any:
+        guard = require_login()
+        if guard:
+            return guard
+        sections = get_profile_sections()
+        all_fields = flatten_sections(sections)
+        if request.method == "POST":
+            save_settings_values(all_fields)
+            if request.form.get("password"):
+                db = get_db()
+                db.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (generate_password_hash(request.form["password"]), g.user["id"]),
+                )
+                db.commit()
+            flash("個人帳號資料已更新", "success")
+            return redirect(url_for("profile"))
+        values = load_settings_values(all_fields)
+        return render_template(
+            "profile.html",
+            sections=sections,
             values=values,
         )
 
@@ -313,6 +316,45 @@ def save_member(member_id: int | None = None) -> None:
     db.commit()
 
 
+def flatten_sections(sections: list[dict[str, Any]]) -> list[dict[str, str]]:
+    fields: list[dict[str, str]] = []
+    for section in sections:
+        fields.extend(section["fields"])
+    return fields
+
+
+def save_settings_values(fields: list[dict[str, str]]) -> None:
+    db = get_db()
+    for field in fields:
+        value = request.form.get(field["name"], "")
+        if field.get("type") == "checkbox":
+            value = "1" if request.form.get(field["name"]) == "on" else "0"
+        db.execute(
+            """
+            INSERT INTO settings (setting_key, setting_value)
+            VALUES (?, ?)
+            ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value
+            """,
+            (field["name"], value.strip() if isinstance(value, str) else value),
+        )
+    db.commit()
+
+
+def load_settings_values(fields: list[dict[str, str]]) -> dict[str, str]:
+    db = get_db()
+    values = {}
+    for field in fields:
+        row = db.execute(
+            "SELECT setting_value FROM settings WHERE setting_key = ?",
+            (field["name"],),
+        ).fetchone()
+        if row:
+            values[field["name"]] = row["setting_value"]
+        else:
+            values[field["name"]] = field.get("default", "")
+    return values
+
+
 def seed_default_settings(db: sqlite3.Connection) -> None:
     defaults = {
         "privacy_policy": (
@@ -376,6 +418,85 @@ def get_settings_fields(tab: str) -> list[dict[str, str]]:
         {"name": "openai_api_key", "label": "OpenAI APIKEY", "type": "text"},
         {"name": "bing_verify", "label": "Bing 驗證碼", "type": "text"},
         {"name": "facebook_pixel", "label": "FB Pixel 代碼", "type": "text"},
+    ]
+
+
+def get_profile_sections() -> list[dict[str, Any]]:
+    return [
+        {
+            "title": "帳戶",
+            "fields": [
+                {"name": "profile_display_enabled", "label": "是否發佈", "type": "radio"},
+                {"name": "profile_email_public", "label": "電子名片", "type": "radio"},
+                {"name": "profile_audio_public", "label": "視訊會議", "type": "radio"},
+                {"name": "profile_company", "label": "姓名", "type": "text", "default": "社團達人展示"},
+                {"name": "profile_nickname", "label": "暱稱", "type": "text", "default": "b_demo"},
+                {"name": "profile_phone_1", "label": "電話1", "type": "text"},
+                {"name": "profile_phone_2", "label": "電話2", "type": "text"},
+                {"name": "profile_email_1", "label": "E-Mail(1)", "type": "text"},
+                {"name": "profile_email_2", "label": "E-mail(2)", "type": "text"},
+                {"name": "password", "label": "密碼", "type": "password"},
+            ],
+        },
+        {
+            "title": "通訊社群",
+            "fields": [
+                {"name": "profile_line_id", "label": "LINE ID", "type": "text"},
+                {"name": "profile_line_url", "label": "LINE 連結站", "type": "text"},
+                {"name": "profile_line_enabled", "label": "啟動 LINE 通知", "type": "checkbox"},
+                {"name": "profile_line_channel", "label": "頻道編號", "type": "text"},
+                {"name": "profile_line_secret", "label": "頻道令牌", "type": "text"},
+                {"name": "profile_line_receiver", "label": "接收者ID", "type": "text"},
+                {"name": "profile_wechat", "label": "WeChat", "type": "text"},
+                {"name": "profile_skype", "label": "SKYPE", "type": "text"},
+                {"name": "profile_facebook", "label": "Facebook", "type": "text"},
+                {"name": "profile_ig", "label": "IG", "type": "text"},
+                {"name": "profile_twitter", "label": "TWITTER", "type": "text"},
+                {"name": "profile_weibo", "label": "微博", "type": "text"},
+            ],
+        },
+        {
+            "title": "個人介紹",
+            "fields": [
+                {"name": "profile_city", "label": "所在地區", "type": "text"},
+                {"name": "profile_address", "label": "地址", "type": "text"},
+                {"name": "profile_website", "label": "網址", "type": "text"},
+                {"name": "profile_business_hour", "label": "個人營業時間", "type": "text"},
+                {"name": "profile_slogan", "label": "Slogan", "type": "text"},
+                {"name": "profile_intro", "label": "個人簡述", "type": "textarea"},
+                {"name": "profile_detail", "label": "個人詳細", "type": "textarea"},
+                {"name": "profile_vendor", "label": "廠商名稱", "type": "text"},
+                {"name": "profile_tax_id", "label": "統編", "type": "text"},
+                {"name": "profile_fax", "label": "傳真", "type": "text"},
+                {"name": "profile_service_desc", "label": "服務說明", "type": "text"},
+                {"name": "profile_service_area", "label": "服務地區", "type": "text"},
+                {"name": "profile_service_items", "label": "服務項目", "type": "textarea"},
+            ],
+        },
+        {
+            "title": "興趣與活動",
+            "fields": [
+                {"name": "profile_interest", "label": "有興趣的", "type": "text"},
+                {"name": "profile_interest_notify", "label": "通知 E-Mail", "type": "checkbox"},
+                {"name": "profile_activity_type", "label": "活動分類", "type": "text"},
+                {"name": "profile_activity_area", "label": "活動所在", "type": "text"},
+                {"name": "profile_activity_name", "label": "社團活動", "type": "text"},
+            ],
+        },
+        {
+            "title": "廣告與帳務",
+            "fields": [
+                {"name": "profile_ad_content", "label": "廣告內容", "type": "textarea"},
+                {"name": "profile_ad_url", "label": "廣告網址", "type": "text"},
+                {"name": "profile_ad_note", "label": "廣告說明", "type": "textarea"},
+                {"name": "profile_bank_info", "label": "銀行帳戶", "type": "textarea"},
+                {"name": "profile_account_image_1", "label": "帳號相片1", "type": "text"},
+                {"name": "profile_account_image_2", "label": "帳號相片2", "type": "text"},
+                {"name": "profile_account_image_3", "label": "帳號相片3", "type": "text"},
+                {"name": "profile_account_image_4", "label": "帳號相片4", "type": "text"},
+                {"name": "profile_note", "label": "備註", "type": "textarea"},
+            ],
+        },
     ]
 
 
