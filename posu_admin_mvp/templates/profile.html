@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}個人帳號資料 | 社團系統{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <h1>個人帳號資料</h1>
+</div>
+
+<section class="settings-card profile-card">
+  <form method="post" class="stack-form">
+    <div class="profile-meta">
+      <span>帳號：{{ g.user["account"] }}</span>
+      <span>編號：{{ g.user["id"] }}</span>
+    </div>
+
+    {% for section in sections %}
+      <div class="section-chip">{{ section["title"] }}</div>
+      {% for field in section["fields"] %}
+      <div class="settings-row">
+        <label>{{ field["label"] }}：</label>
+        <div class="settings-input">
+          {% if field["type"] == "textarea" %}
+            <textarea name="{{ field['name'] }}" rows="7">{{ values[field['name']] }}</textarea>
+          {% elif field["type"] == "checkbox" %}
+            <label class="checkbox-label">
+              <input type="checkbox" name="{{ field['name'] }}" {% if values[field['name']] == "1" %}checked{% endif %}>
+              啟用
+            </label>
+          {% elif field["type"] == "radio" %}
+            <label class="inline-radio">
+              <input type="radio" name="{{ field['name'] }}" value="0" {% if values[field['name']] != "1" %}checked{% endif %}>
+              不發佈
+            </label>
+            <label class="inline-radio">
+              <input type="radio" name="{{ field['name'] }}" value="1" {% if values[field['name']] == "1" %}checked{% endif %}>
+              發佈
+            </label>
+          {% elif field["type"] == "password" %}
+            <input type="password" name="{{ field['name'] }}" value="" placeholder="留空表示不變更密碼">
+          {% else %}
+            <input type="text" name="{{ field['name'] }}" value="{{ values[field['name']] }}">
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% endfor %}
+    <div class="form-footer">
+      <button type="submit">送出資料</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

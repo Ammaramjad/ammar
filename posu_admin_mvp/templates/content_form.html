@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ form_action }} | 社團系統{% endblock %}
+{% block content %}
+<section class="settings-card profile-card">
+  <h1>{{ form_action }}</h1>
+  <form method="post" class="stack-form">
+    <div class="settings-row">
+      <label>標題：</label>
+      <div class="settings-input">
+        <input type="text" name="title" value="{{ item['title'] if item else '' }}" required>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>摘要：</label>
+      <div class="settings-input">
+        <input type="text" name="summary" value="{{ item['summary'] if item else '' }}">
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>內容：</label>
+      <div class="settings-input">
+        <textarea name="body" rows="12">{{ item['body'] if item else '' }}</textarea>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>外部連結：</label>
+      <div class="settings-input">
+        <input type="text" name="external_url" value="{{ item['external_url'] if item else '' }}" placeholder="https://">
+      </div>
+    </div>
+    <div class="settings-row">
+      <label>狀態：</label>
+      <div class="settings-input">
+        <label class="checkbox-label">
+          <input type="checkbox" name="published" {% if not item or item['published'] %}checked{% endif %}>
+          開放顯示
+        </label>
+      </div>
+    </div>
+    <div class="form-footer">
+      <button type="submit">儲存</button>
+      <a class="button-link ghost" href="{{ url_for('content_list', module=module) }}">取消</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
