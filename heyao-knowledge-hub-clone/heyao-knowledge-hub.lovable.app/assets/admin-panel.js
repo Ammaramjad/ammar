@@ -184,8 +184,7 @@ async function createItem() {
     showStatus("Creating item...");
     await request("POST", resourcePath, body);
     setLastAction("Created");
-    showStatus("Item created successfully.", false, true);
-    await listItems();
+    showStatus("Item created successfully. Click List to refresh table data.", false, true);
   } catch (error) {
     showStatus(error.message, true);
   }
@@ -203,8 +202,7 @@ async function updateItem() {
     showStatus("Updating item...");
     await request("PUT", `${resourcePath}/${encodeURIComponent(id)}`, body);
     setLastAction("Updated");
-    showStatus("Item updated successfully.", false, true);
-    await listItems();
+    showStatus("Item updated successfully. Click List to refresh table data.", false, true);
   } catch (error) {
     showStatus(error.message, true);
   }
@@ -221,8 +219,7 @@ async function deleteItem() {
     showStatus("Deleting item...");
     await request("DELETE", `${resourcePath}/${encodeURIComponent(id)}`);
     setLastAction("Deleted");
-    showStatus("Item deleted successfully.", false, true);
-    await listItems();
+    showStatus("Item deleted successfully. Click List to refresh table data.", false, true);
   } catch (error) {
     showStatus(error.message, true);
   }
