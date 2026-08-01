@@ -108,7 +108,7 @@ def _header_footer(canvas, doc, header_title: str):
     canvas.rect(1.3 * cm, height - 1.5 * cm, width - 2.6 * cm, 0.6 * cm, stroke=0, fill=1)
     canvas.setFillColor(colors.white)
     canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(1.5 * cm, height - 1.3 * cm, f"[AI] {header_title}")
+    canvas.drawString(1.5 * cm, height - 1.3 * cm, f"{header_title}")
     canvas.setFillColor(colors.HexColor("#0b3d91"))
     canvas.setFont("Helvetica", 8)
     canvas.drawRightString(width - 1.5 * cm, 1.0 * cm, f"Page {doc.page}")
@@ -170,85 +170,247 @@ def generate_prompt_records(
     categories: List[str],
     focus_areas: List[str],
     output_artifacts: List[str],
+    title_starters: List[str],
+    scenario_pool: List[str],
+    venue_pool: List[str],
+    workflow_labels: List[str],
 ) -> List[PromptRecord]:
-    verbs = [
-        "Design",
-        "Evaluate",
-        "Compare",
-        "Refine",
-        "Validate",
-        "Optimize",
-        "Synthesize",
-        "Map",
-        "Diagnose",
-        "Translate",
-        "Prioritize",
-        "Structure",
-        "Model",
-        "Forecast",
-        "Interrogate",
-        "Reframe",
-        "Operationalize",
-    ]
-    contexts = [
-        "a multi-phase project",
-        "a cross-disciplinary study",
-        "a high-impact conference submission",
-        "an industry-backed experiment",
-        "a reproducibility-sensitive investigation",
-        "a longitudinal dataset",
-        "a policy-oriented manuscript",
-        "a method benchmarking campaign",
-        "an ethics-aware deployment study",
-        "an emerging technology review",
-    ]
-    dimensions = [
-        "novelty",
-        "feasibility",
-        "rigor",
-        "generalizability",
-        "reproducibility",
-        "ethical compliance",
-        "cost efficiency",
-        "computational efficiency",
-        "publication readiness",
-        "stakeholder clarity",
-    ]
+    dimensions = ["novelty", "rigor", "reproducibility", "clarity", "statistical power", "transferability", "ethical compliance", "computational efficiency", "clinical relevance", "publication readiness"]
     difficulty_scale = ["Beginner", "Intermediate", "Advanced", "Expert"]
+    archetypes = [
+        {
+            "name": "Novel Contribution Architect",
+            "objective": "Create a contribution map that defends novelty against closest prior work and defines what is publishable.",
+            "prompt": "Act as a senior research editor. Build a contribution architecture for {focus} in {scenario} targeting {venue}. Output sections: contribution claim stack, nearest-neighbor prior work comparison, differentiator evidence plan, failure-risk matrix, and a 30/60/90-day execution plan.",
+            "tips": "Force each claim to link to one measurable piece of evidence and one comparison baseline.",
+        },
+        {
+            "name": "Research Gap Forensics",
+            "objective": "Detect non-obvious research gaps and convert them into testable opportunities.",
+            "prompt": "You are a literature forensics specialist. From the context below, identify unresolved contradictions in {focus} and rank them by impact and tractability. Then design three testable gap statements, each with required datasets, threat-to-validity notes, and likely reviewer objections for {venue}.",
+            "tips": "Distinguish 'no evidence exists' from 'evidence exists but conflicts' to avoid weak gap claims.",
+        },
+        {
+            "name": "Reviewer #2 Rebuttal Builder",
+            "objective": "Turn skeptical reviewer criticism into a persuasive, evidence-linked response workflow.",
+            "prompt": "Assume Reviewer #2 challenges {focus} for {venue}. Draft a response package with: acknowledgement sentence, technical clarification, direct manuscript change, optional added experiment, and fallback wording if resources are limited. Provide line-level mapping format for revision tracking.",
+            "tips": "Use respectful tone and separate explanation, action, and manuscript delta into distinct bullets.",
+        },
+        {
+            "name": "Methodology Clarity Refiner",
+            "objective": "Rewrite methods for reproducibility and procedural transparency.",
+            "prompt": "Rewrite the methodology around {focus} for {scenario} so another lab can reproduce it without author contact. Include variable definitions, preprocessing chronology, model hyperparameters, instrumentation assumptions, and reproducibility checklist required for {venue}.",
+            "tips": "Name every tool/version and include randomness-control policy.",
+        },
+        {
+            "name": "IEEE/ACM Section Optimizer",
+            "objective": "Produce section drafts compliant with high-impact conference and journal conventions.",
+            "prompt": "Generate a publication-ready section for {focus} tuned for {venue}. Enforce concise technical style, explicit contributions, and strong figure/table callouts. Provide two style variants: IEEE Transactions tone and ACM conference tone with sentence-level rewrites.",
+            "tips": "Avoid generic claims; anchor every paragraph with result-oriented language.",
+        },
+        {
+            "name": "Elsevier Revision Planner",
+            "objective": "Plan a high-confidence major revision package for journal resubmission.",
+            "prompt": "Create a major revision plan for an Elsevier-style decision letter focused on {focus}. Include comment clustering, evidence plan, timeline by dependency, added-analysis options, and response-letter structure that anticipates editor priorities for {venue}.",
+            "tips": "Group reviewer comments by technical dependency to prevent contradictory edits.",
+        },
+        {
+            "name": "Nature-Style Abstract Composer",
+            "objective": "Craft concise, high-impact abstracts aligned with selective journal standards.",
+            "prompt": "Write a Nature-style abstract for a study on {focus} in {scenario}. Constrain to problem, approach, principal quantitative finding, boundary condition, and broader implication. Provide a weaker draft and then a stronger revised draft with rationale.",
+            "tips": "One central claim per sentence keeps abstract logic clean and persuasive.",
+        },
+        {
+            "name": "Experimental Design Stress Test",
+            "objective": "Pressure-test experimental design before expensive execution.",
+            "prompt": "Audit the experimental design for {focus}. Produce control/ablation matrix, confound analysis, data leakage checks, minimum sample strategy, and statistical power guardrails suitable for {venue} reviewers. Include a stop/go decision protocol.",
+            "tips": "Design ablations to isolate one causal factor at a time.",
+        },
+        {
+            "name": "Statistical Analysis Blueprint",
+            "objective": "Select robust statistical strategy and interpretation logic.",
+            "prompt": "Design a statistical analysis workflow for {focus} with assumptions, test-selection logic, effect-size reporting, multiplicity correction, and uncertainty interpretation. Output a decision tree that maps data conditions to recommended tests for {venue}.",
+            "tips": "Pair p-values with effect sizes and confidence intervals in every result claim.",
+        },
+        {
+            "name": "Figure and Caption Scientist",
+            "objective": "Transform visuals into evidence-rich storytelling assets.",
+            "prompt": "Generate a figure strategy for {focus} with publication-grade caption drafts. For each figure, define purpose, metric, axis design, uncertainty communication, and interpretation sentence expected by {venue}. Add one caption rewrite for non-expert readers.",
+            "tips": "Good captions stand alone and state what changed, by how much, and why it matters.",
+        },
+        {
+            "name": "LaTeX Manuscript Assistant",
+            "objective": "Convert technical narrative into clean, production-ready LaTeX structure.",
+            "prompt": "Create a LaTeX writing workflow for {focus}: section skeleton, theorem/algorithm formatting guidance, table conventions, citation macros, and cross-reference hygiene. Include common formatting errors and fixes for {venue} submission checks.",
+            "tips": "Draft content in semantic chunks before polishing visual layout.",
+        },
+        {
+            "name": "Citation Gap Detector",
+            "objective": "Detect weak citation support and strengthen scholarly positioning.",
+            "prompt": "Analyze a draft on {focus} and identify citation gaps by claim type: foundational, comparative, methodological, and limitation-related. Return a prioritized fill plan with query phrases, likely source types, and insertion points tailored to {venue}.",
+            "tips": "Flag unsupported superlatives first; they trigger avoidable reviewer criticism.",
+        },
+        {
+            "name": "Ethics and Compliance Guardrail",
+            "objective": "Embed ethics and compliance checks into the technical workflow.",
+            "prompt": "Build an ethics checklist and mitigation plan for {focus} in {scenario}. Include fairness risks, privacy boundaries, human-subject concerns, reporting transparency, and audit evidence expected for {venue} review.",
+            "tips": "Translate ethical risks into actionable controls with owner and verification evidence.",
+        },
+        {
+            "name": "Defense and Q&A Simulator",
+            "objective": "Prepare rigorous responses for committee or reviewer questioning.",
+            "prompt": "Simulate a high-pressure Q&A on {focus}. Generate 15 hard questions (methods, validity, novelty, limitations, impact) and produce concise, evidence-backed responses with fallback answers for uncertain data points. Include one slide cue per answer.",
+            "tips": "Structure answers as claim -> evidence -> limitation -> next action.",
+        },
+        {
+            "name": "Results Interpretation Engine",
+            "objective": "Convert raw metrics into defensible scientific interpretation.",
+            "prompt": "Interpret results for {focus} using a claim-evidence map: primary findings, uncertainty envelope, competing explanations, boundary conditions, and implications for future work in {venue}. Add one paragraph that preempts overclaiming.",
+            "tips": "State what the results do not prove as clearly as what they do prove.",
+        },
+        {
+            "name": "Publication Strategy Playbook",
+            "objective": "Choose venue strategy, narrative framing, and revision sequencing.",
+            "prompt": "Design a publication strategy for {focus}: venue ladder (A-plan/B-plan), novelty framing options, deadline-aligned writing sprints, and reviewer-risk scenarios. Include a branch for conference-first then journal-extension path for {venue}.",
+            "tips": "Plan fallback venue narratives early to reduce resubmission cycle time.",
+        },
+    ]
+    disciplines = [
+        "biomedical engineering",
+        "machine learning",
+        "human-computer interaction",
+        "computational social science",
+        "climate informatics",
+        "robotics",
+        "materials informatics",
+        "cybersecurity",
+        "digital health",
+        "computational neuroscience",
+    ]
+    datasets = [
+        "multi-site clinical cohort",
+        "longitudinal sensor dataset",
+        "multi-modal image-text corpus",
+        "benchmark tabular risk dataset",
+        "public genomics panel",
+        "city-scale mobility records",
+        "industrial telemetry stream",
+        "crowdsourced annotation dataset",
+        "federated hospital dataset",
+        "open government policy data",
+    ]
+    methods = [
+        "transformer baseline",
+        "causal inference pipeline",
+        "Bayesian hierarchical model",
+        "graph neural workflow",
+        "mixed-methods protocol",
+        "time-series anomaly framework",
+        "hybrid rule-neural model",
+        "multi-objective optimizer",
+        "semi-supervised training setup",
+        "counterfactual evaluation approach",
+    ]
+    reviewer_personas = [
+        "skeptical statistician",
+        "applied domain expert",
+        "methodology purist",
+        "editor focused on clarity",
+        "reproducibility auditor",
+        "theory-oriented reviewer",
+        "industry impact reviewer",
+        "ethics compliance reviewer",
+        "benchmarking specialist",
+        "systems performance reviewer",
+        "interdisciplinary committee member",
+    ]
+    output_schemas = [
+        "decision matrix",
+        "claim-evidence table",
+        "risk register",
+        "action timeline",
+        "section rewrite pack",
+        "rebuttal response grid",
+        "ablation plan sheet",
+        "statistical decision tree",
+        "figure-caption protocol",
+        "citation repair map",
+        "compliance checklist",
+    ]
+    risk_scenarios = [
+        "dataset shift at deployment",
+        "small sample size constraints",
+        "conflicting baseline outcomes",
+        "unexpected reviewer disagreement",
+        "compute budget reduction",
+        "missing metadata in source data",
+        "high class imbalance",
+        "time-limited resubmission window",
+        "incomplete ablation coverage",
+        "inter-annotator disagreement",
+        "ethics board clarification request",
+    ]
+    title_angles = [
+        "publishable novelty framing",
+        "reviewer-resilient argumentation",
+        "evidence-first writing",
+        "venue-specific optimization",
+        "impact-focused communication",
+        "replication-grade documentation",
+        "high-confidence statistical reporting",
+        "editorial risk reduction",
+        "cross-domain readability",
+        "major-revision readiness",
+        "defense-ready reasoning",
+        "method comparison clarity",
+        "limitations-first transparency",
+        "results-to-insight translation",
+        "citation-strength positioning",
+        "practical deployment framing",
+        "ethics-by-design reporting",
+        "hypothesis stress testing",
+        "decision traceability",
+    ]
     prompts: List[PromptRecord] = []
+    title_seen = set()
     for i in range(1, count + 1):
-        v = verbs[(i * 3) % len(verbs)]
-        c = contexts[(i * 7) % len(contexts)]
+        archetype = archetypes[(i * 19) % len(archetypes)]
+        title_seed = title_starters[(i * 5) % len(title_starters)]
+        workflow = workflow_labels[(i * 7) % len(workflow_labels)]
+        scenario = scenario_pool[(i * 11) % len(scenario_pool)]
+        venue = venue_pool[(i * 13) % len(venue_pool)]
         d = dimensions[(i * 11) % len(dimensions)]
         focus = focus_areas[(i * 5) % len(focus_areas)]
         artifact = output_artifacts[(i * 13) % len(output_artifacts)]
-        category = categories[(i * 17) % len(categories)]
+        category = categories[(i * 17 + i // 9) % len(categories)]
         diff = difficulty_scale[(i - 1) % len(difficulty_scale)]
+        discipline = disciplines[(i * 23) % len(disciplines)]
+        dataset = datasets[(i * 29) % len(datasets)]
+        method = methods[(i * 31) % len(methods)]
+        persona = reviewer_personas[(i * 41) % len(reviewer_personas)]
+        schema = output_schemas[(i * 43) % len(output_schemas)]
+        risk_case = risk_scenarios[(i * 47) % len(risk_scenarios)]
+        angle = title_angles[(i * 53) % len(title_angles)]
 
-        title = f"{domain} {i:03d}: {v} {focus} for {c}"
+        title = f"{title_seed}: {workflow} for {scenario} ({venue}) - {angle}"
+        if title in title_seen:
+            title = f"{title} - Variant {i:03d}"
+        title_seen.add(title)
         objective = (
-            f"Build a high-clarity strategy for {focus} by improving {d}, reducing ambiguity, "
-            f"and aligning decisions with research objectives."
+            f"{archetype['objective']} Prioritize {d} and produce publication-grade decisions for {focus}."
         )
-        prompt_text = (
-            f"You are an expert research strategist. Analyze the project context below and produce a "
-            f"structured plan focused on {focus}. Context: discipline={{discipline}}, dataset={{dataset}}, "
-            f"time horizon={{timeline}}, resource limits={{resources}}. Deliver: (1) assumptions, (2) stepwise "
-            f"method, (3) evaluation criteria linked to {d}, (4) risk controls, and (5) an implementation schedule. "
-            f"Conclude with measurable success indicators and a concise quality checklist."
+        prompt_text = archetype["prompt"].format(focus=focus, scenario=scenario, venue=venue) + (
+            f" Project profile: discipline={discipline}; dataset={dataset}; preferred method={method}; "
+            f"reviewer persona={persona}; output schema={schema}; risk scenario={risk_case}; "
+            "timeline={timeline}; resources={resources}. Return outputs as numbered sections and end with an execution checklist."
         )
         example = (
-            f"Example input: discipline=computational biology; dataset=single-cell RNA-seq cohort; "
-            f"timeline=12 weeks; resources=2 researchers and 1 GPU node. "
-            f"Example outcome: a staged protocol and {artifact} with milestones."
+            f"Example input: discipline={discipline}; dataset={dataset}; timeline=14 weeks; resources=3 researchers + 2 GPUs; "
+            f"target venue={venue}; reviewer persona={persona}. Example outcome: {artifact} with risk controls, reviewer-facing rationale, and milestone gates."
         )
-        tips = (
-            "State assumptions explicitly; define boundaries before proposing methods; tie every recommendation "
-            "to a measurable criterion; include one contingency branch for likely failure points."
-        )
+        tips = f"{archetype['tips']} Ensure the {schema} explicitly addresses {risk_case} and anticipated concerns from a {persona}."
         expected_output = (
-            f"A publication-grade {artifact} containing rationale, method choices, decision criteria, "
-            f"risk mitigations, and implementation priorities for {focus}."
+            f"A publication-ready {artifact} that includes decisions, rationale, measurable criteria, and reviewer-resilient framing for {focus}."
         )
         prompts.append(
             PromptRecord(
@@ -283,11 +445,11 @@ def build_prompt_pdf(
         bottomMargin=1.8 * cm,
     )
     story = []
-    story.extend(_cover_story(title, "Prompt Library", styles))
+    story.extend(_cover_story(title, "Expert Workflow Library", styles))
     story.append(Paragraph("Table of Contents", styles["h1"]))
     story.append(Paragraph("1. Introduction", styles["body"]))
     story.append(Paragraph("2. Instructions", styles["body"]))
-    story.append(Paragraph("3. Prompt Library", styles["body"]))
+    story.append(Paragraph("3. Workflow Library", styles["body"]))
     story.append(Paragraph("4. Summary", styles["body"]))
     story.append(PageBreak())
     story.append(Paragraph("Introduction", styles["h1"]))
@@ -297,7 +459,7 @@ def build_prompt_pdf(
     for item in instructions:
         story.append(Paragraph(f"- {item}", styles["body"]))
     story.append(PageBreak())
-    story.append(Paragraph("Prompt Library", styles["h1"]))
+    story.append(Paragraph("Workflow Library", styles["h1"]))
 
     for i, prompt in enumerate(prompts, start=1):
         story.append(Paragraph(f"{i}. {prompt.title}", styles["h2"]))
@@ -574,48 +736,49 @@ def generate_all_prompt_pdfs() -> dict[str, list[PromptRecord]]:
     prompt_map: dict[str, list[PromptRecord]] = {}
 
     prompt_specs = [
-        ("Research_Idea_Generation.pdf", "Research Idea Generation", 120, ["Novelty Discovery", "Hypothesis Framing", "Problem Selection", "Feasibility Scan"], ["research roadmap", "hypothesis matrix", "priority map"]),
-        ("Experimental_Design.pdf", "Experimental Design", 100, ["Ablation Planning", "Control Groups", "Evaluation Protocol", "Bias Mitigation"], ["experiment protocol", "variable registry", "decision log"]),
-        ("Data_Analysis.pdf", "Data Analysis", 100, ["Data Profiling", "Model Diagnostics", "Feature Interpretation", "Error Analysis"], ["analysis report", "diagnostic dashboard", "feature impact memo"]),
-        ("Statistics.pdf", "Statistical Interpretation", 90, ["Hypothesis Testing", "Effect Size Analysis", "Uncertainty Quantification", "Robustness Checks"], ["statistical memo", "result interpretation grid", "evidence summary"]),
-        ("Publication_Strategy.pdf", "Publication Strategy", 90, ["Venue Targeting", "Contribution Positioning", "Revision Planning", "Response Strategy"], ["submission strategy memo", "review-risk map", "timeline playbook"]),
-        ("Academic_Writing.pdf", "Academic Writing", 120, ["Argument Structure", "Clarity Optimization", "Narrative Flow", "Technical Precision"], ["writing blueprint", "section improvement plan", "clarity checklist"]),
-        ("Literature_Review.pdf", "Literature Review", 300, ["Search Strategy", "Critical Appraisal", "Gap Identification", "Synthesis Design"], ["evidence map", "thematic synthesis", "citation logic matrix"]),
-        ("Reviewer_Response.pdf", "Reviewer Response", 200, ["Tone Calibration", "Evidence-backed Rebuttal", "Revision Traceability", "Decision Negotiation"], ["response letter", "comment-response matrix", "revision evidence table"]),
-        ("IEEE_Writing.pdf", "IEEE Writing", 100, ["IEEE Formatting", "Technical Positioning", "Result Narration", "Limitations Framing"], ["IEEE-ready section draft", "compliance checklist", "figure-caption package"]),
-        ("Thesis_Writing.pdf", "Thesis Writing", 100, ["Chapter Architecture", "Method Defense", "Contribution Validation", "Viva Preparation"], ["chapter plan", "defense argument map", "thesis refinement protocol"]),
+        ("Research_Idea_Generation.pdf", "Research Idea Generation", 120, ["Novelty Discovery", "Hypothesis Framing", "Problem Selection", "Feasibility Scan"], ["research roadmap", "hypothesis matrix", "priority map"], ["Create Novel Contributions", "Generate a Strong Research Gap", "Design a Defensible Hypothesis", "Map Breakthrough Research Opportunities"], ["early-stage thesis planning", "industry-sponsored research proposal", "interdisciplinary grant concept", "first-author conference submission"], ["IEEE Transactions", "ACM Computing Surveys", "Nature Communications", "Elsevier Expert Systems"], ["novelty pipeline", "gap-to-hypothesis workflow", "contribution stress test", "high-impact scope design"]),
+        ("Experimental_Design.pdf", "Experimental Design", 100, ["Ablation Planning", "Control Groups", "Evaluation Protocol", "Bias Mitigation"], ["experiment protocol", "variable registry", "decision log"], ["Strengthen Experimental Design", "Build Reviewer-Proof Ablations", "Create a Robust Validation Plan", "Design Controls That Survive Peer Review"], ["multi-dataset benchmarking study", "resource-constrained lab experiment", "high-variance real-world deployment", "replication package for supplementary material"], ["NeurIPS", "ICML", "AAAI", "IEEE TPAMI"], ["ablation architecture", "confound-control workflow", "evaluation matrix design", "power-aware experiment planning"]),
+        ("Data_Analysis.pdf", "Data Analysis", 100, ["Data Profiling", "Model Diagnostics", "Feature Interpretation", "Error Analysis"], ["analysis report", "diagnostic dashboard", "feature impact memo"], ["Explain Results Scientifically", "Diagnose Failure Modes with Evidence", "Build a High-Rigor Error Analysis", "Convert Metrics into Insight"], ["post-experiment analysis sprint", "cross-cohort transfer study", "deployment drift investigation", "model debugging cycle before resubmission"], ["KDD", "IJCAI", "PLOS ONE", "IEEE Access"], ["error taxonomy workflow", "result-explanation workflow", "feature-impact investigation", "diagnostic reporting system"]),
+        ("Statistics.pdf", "Statistical Interpretation", 90, ["Hypothesis Testing", "Effect Size Analysis", "Uncertainty Quantification", "Robustness Checks"], ["statistical memo", "result interpretation grid", "evidence summary"], ["Plan Statistical Analysis Like a Reviewer", "Build an Uncertainty-First Results Section", "Strengthen Significance Claims", "Audit Statistical Validity"], ["small-sample experimental setup", "imbalanced-class benchmarking", "longitudinal causal analysis", "clinical-risk model evaluation"], ["Biostatistics", "JMLR", "IEEE JBHI", "Elsevier Pattern Recognition"], ["test-selection decision tree", "effect-size narrative workflow", "robustness audit protocol", "uncertainty communication framework"]),
+        ("Publication_Strategy.pdf", "Publication Strategy", 90, ["Venue Targeting", "Contribution Positioning", "Revision Planning", "Response Strategy"], ["submission strategy memo", "review-risk map", "timeline playbook"], ["Choose the Right Venue Strategy", "Plan a High-Probability Submission Path", "Build a Smart Resubmission Ladder", "Design an Editor-Friendly Revision Plan"], ["first journal submission cycle", "conference rejection recovery path", "journal-extension planning cycle", "multi-venue publication roadmap"], ["IEEE TNNLS", "ACM TOIS", "Nature Machine Intelligence", "Elsevier Information Sciences"], ["venue ladder workflow", "revision scheduling system", "editorial risk mitigation", "submission playbook"]),
+        ("Academic_Writing.pdf", "Academic Writing", 120, ["Argument Structure", "Clarity Optimization", "Narrative Flow", "Technical Precision"], ["writing blueprint", "section improvement plan", "clarity checklist"], ["Write a High-Impact Introduction", "Improve Methodology Clarity", "Rewrite for Nature Journal", "Polish Discussion for Acceptance"], ["camera-ready manuscript preparation", "major-revision rewrite sprint", "advisor feedback integration cycle", "cross-disciplinary audience adaptation"], ["Nature", "Science Advances", "IEEE", "ACM"], ["clarity optimization workflow", "argument architecture system", "section rewrite protocol", "reader-comprehension tuning"]),
+        ("Literature_Review.pdf", "Literature Review", 300, ["Search Strategy", "Critical Appraisal", "Gap Identification", "Synthesis Design"], ["evidence map", "thematic synthesis", "citation logic matrix"], ["Build a Literature Map That Finds Gaps", "Create a Review Synthesis That Cites Correctly", "Detect Citation Gaps with Confidence", "Turn Papers into Research Direction"], ["systematic review planning phase", "chapter-2 thesis drafting cycle", "rapid scoping review for proposal", "state-of-the-art positioning for rebuttal"], ["PRISMA-aligned journal", "ACM CSUR", "IEEE Survey Journal", "Elsevier Knowledge-Based Systems"], ["query-to-synthesis workflow", "evidence grading workflow", "gap extraction engine", "related-work architecture"]),
+        ("Reviewer_Response.pdf", "Reviewer Response", 200, ["Tone Calibration", "Evidence-backed Rebuttal", "Revision Traceability", "Decision Negotiation"], ["response letter", "comment-response matrix", "revision evidence table"], ["Improve Reviewer Response Letter", "Handle Reviewer #2 Professionally", "Write a Persuasive Rebuttal", "Transform Criticism into Acceptance"], ["major revision after mixed reviews", "editor requests additional clarity", "methodological criticism rebuttal", "limited-resource response strategy"], ["Elsevier journal review", "Springer major revision", "IEEE minor revision", "ACM rebuttal stage"], ["comment-response workflow", "tone-safe rebuttal workflow", "line-mapped revision protocol", "editor negotiation framework"]),
+        ("IEEE_Writing.pdf", "IEEE Writing", 100, ["IEEE Formatting", "Technical Positioning", "Result Narration", "Limitations Framing"], ["IEEE-ready section draft", "compliance checklist", "figure-caption package"], ["Write a High-Impact IEEE Introduction", "Optimize Abstract for IEEE Reviewers", "Engineer a Results Section for IEEE", "Prepare IEEE-Ready Technical Narrative"], ["IEEE Transactions submission cycle", "IEEE conference paper deadline sprint", "camera-ready compliance check", "technical rewrite from preprint to IEEE"], ["IEEE Transactions", "IEEE Access", "IEEE IoT Journal", "IEEE TPDS"], ["IEEE structure workflow", "results storytelling workflow", "compliance-first editing", "caption and table enhancement"]),
+        ("Thesis_Writing.pdf", "Thesis Writing", 100, ["Chapter Architecture", "Method Defense", "Contribution Validation", "Viva Preparation"], ["chapter plan", "defense argument map", "thesis refinement protocol"], ["Create a Defensible Thesis Chapter", "Prepare for Thesis Defense Questions", "Improve Chapter Coherence and Flow", "Build a Strong Dissertation Contribution Story"], ["doctoral dissertation writing phase", "pre-viva revision sprint", "committee feedback consolidation", "chapter-to-paper conversion planning"], ["University thesis committee", "doctoral viva defense", "departmental review board", "external examiner review"], ["chapter architecture workflow", "defense prep workflow", "contribution validation system", "committee-response planning"]),
     ]
 
-    categories = [
-        "Planning",
-        "Methodology",
-        "Validation",
-        "Writing",
-        "Reasoning",
-        "Strategy",
-        "Execution",
-        "Optimization",
-    ]
+    categories = ["Planning", "Methodology", "Validation", "Writing", "Reasoning", "Strategy", "Execution", "Optimization", "Publication", "Rebuttal", "Analysis", "Compliance"]
 
-    for file_name, domain, count, focus_areas, artifacts in prompt_specs:
-        prompts = generate_prompt_records(count, domain, categories, focus_areas, artifacts)
+    for file_name, domain, count, focus_areas, artifacts, title_starters, scenarios, venues, workflows in prompt_specs:
+        prompts = generate_prompt_records(
+            count,
+            domain,
+            categories,
+            focus_areas,
+            artifacts,
+            title_starters,
+            scenarios,
+            venues,
+            workflows,
+        )
         prompt_map[domain] = prompts
         intro = (
-            f"This {domain} library provides {count} original prompts engineered for high-rigor "
-            "academic and technical workflows. Each prompt includes practical fields to help users move "
-            "from ideation to reproducible output."
+            f"This {domain} collection provides {count} expert research workflows engineered for high-rigor "
+            "academic and technical delivery. Each workflow includes practical fields to help users move "
+            "from strategy to publication-ready output."
         )
         instructions = [
-            "Select prompts by category and difficulty to match project maturity.",
-            "Replace variables in the prompt with your specific discipline, data, and constraints.",
+            "Select workflows by category and difficulty to match project maturity.",
+            "Replace variables in each workflow with your discipline, data, and resource constraints.",
             "Use Expected Output as the acceptance criteria for quality control.",
             "Store outputs in versioned folders to preserve decision history.",
         ]
         summary = (
-            f"Applying these {count} prompts systematically improves decision quality, writing clarity, "
+            f"Applying these {count} workflows systematically improves decision quality, writing clarity, "
             "and publication readiness across research cycles."
         )
-        build_prompt_pdf(ai_prompts_dir / file_name, f"{domain} Prompt Library", intro, instructions, summary, prompts)
+        build_prompt_pdf(ai_prompts_dir / file_name, f"{domain} Workflow Library", intro, instructions, summary, prompts)
 
     return prompt_map
 
